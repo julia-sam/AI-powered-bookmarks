@@ -1,3 +1,4 @@
+console.log("content.js has been injected");
 // Listen for messages from background.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "SAVE_HIGHLIGHT") {

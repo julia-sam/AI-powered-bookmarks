@@ -2,12 +2,19 @@
     "name": "Embed Anywhere",
     "version": "0.0.1",
     "manifest_version": 3,
-    "description": "Right-click to save highlights to a knowledge base",
     "permissions": [
       "contextMenus",
       "activeTab",
-      "scripting",
       "storage"
+    ],
+    "host_permissions": [
+      "<all_urls>"
+    ],
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"]
+      }
     ],
     "background": {
       "service_worker": "background.js"
@@ -15,5 +22,5 @@
     "action": {
       "default_popup": "popup.html"
     }
-  }
+}
   
