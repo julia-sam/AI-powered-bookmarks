@@ -3,6 +3,19 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 from flask_cors import CORS
+from dotenv import load_dotenv
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.schema import Document
+
+load_dotenv()
+embeddings_model = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
+
+INDEX_DIR = "faiss_index"
+vector_store = None
+
+if os.path.isdir(INDEX_DIR):
+    vector_store = FAISS.load_local(INDEX_DIR, embeddings_model)
 
 app = Flask(__name__)
 CORS(app)
@@ -20,14 +33,34 @@ class Entry(db.Model):
 def save_entry():
     data = request.get_json()
     entry = Entry(
-        content=data.get('content', ''),
-        page_url=data.get('page_url', ''),
-        page_title=data.get('page_title', ''),
-        timestamp=datetime.fromisoformat(data.get('timestamp'))
+        content   = data['content'],
+        page_url  = data['page_url'],
+        page_title= data['page_title'],
+        timestamp = datetime.fromisoformat(data['timestamp'])
     )
     db.session.add(entry)
     db.session.commit()
-    return jsonify({"status": "success", "id": entry.id}), 200
+
+    # 1) Generate embedding and persist in DB
+    emb = embeddings_model.embed_query(entry.content)
+    entry.embedding = emb
+    db.session.commit()
+
+    # 2) Wrap it in a LangChain Document
+    doc = Document(page_content=entry.content, metadata={"id": entry.id})
+
+    global vector_store
+    if vector_store is None:
+        # first document ever → create the index
+        vector_store = FAISS.from_documents([doc], embeddings_model)
+    else:
+        # subsequent docs → just add
+        vector_store.add_documents([doc])
+
+    # 3) Save to disk so we can reload next time
+    vector_store.save_local(INDEX_DIR)
+
+    return jsonify({"status":"success","id":entry.id}), 200
 
 @app.route('/entries', methods=['GET'])
 def get_entries():
@@ -42,6 +75,31 @@ def get_entries():
             "timestamp": e.timestamp.isoformat()
         })
     return jsonify(results), 200
+
+@app.route('/search', methods=['GET'])
+def search_entries():
+    q = request.args.get('q','')
+    if not q:
+        return jsonify([]), 200
+
+    # 1) run semantic search
+    results = vector_store.similarity_search(q, k=5)
+
+    # 2) lookup full entries in the DB
+    out = []
+    for doc in results:
+        eid = int(doc.metadata['id'])
+        e = Entry.query.get(eid)
+        out.append({
+            "id": e.id,
+            "content": e.content,
+            "page_url": e.page_url,
+            "page_title": e.page_title,
+            "score": doc.score  # similarity score
+        })
+
+    return jsonify(out), 200
+
 
 if __name__ == '__main__':
     if not os.path.exists('knowledge.db'):
