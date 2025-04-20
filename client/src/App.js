@@ -50,10 +50,20 @@ function App() {
     // Bar chart of similarity scores for search results
     const titles = displayList.map(e => e.page_title);
     const scores = displayList.map(e => e.score ?? 0);
-    chartData = [{ x: titles, y: scores, type: 'bar' }];
+    chartData = [{ 
+      x: titles, 
+      y: scores, 
+      type: 'bar', 
+      marker: { color: 'rgba(54, 162, 235, 0.7)', line: { color: 'rgba(54, 162, 235, 1)', width: 2 } } 
+    }];
     chartLayout = {
       title: 'Search Result Similarity Scores',
-      xaxis: { automargin: true }
+      titlefont: { size: 24, color: '#333' },
+      xaxis: { automargin: true, title: 'Page Titles', titlefont: { size: 16, color: '#666' } },
+      yaxis: { title: 'Similarity Score', titlefont: { size: 16, color: '#666' } },
+      plot_bgcolor: '#f9f9f9',
+      paper_bgcolor: '#ffffff',
+      font: { family: 'Arial, sans-serif', size: 14, color: '#333' },
     };
   } else {
     // Domain frequency for recent entries
@@ -68,10 +78,20 @@ function App() {
     }, {});
     const domains = Object.keys(domainCount);
     const counts  = Object.values(domainCount);
-    chartData = [{ x: domains, y: counts, type: 'bar' }];
+    chartData = [{ 
+      x: domains, 
+      y: counts, 
+      type: 'bar', 
+      marker: { color: 'rgba(75, 192, 192, 0.7)', line: { color: 'rgba(75, 192, 192, 1)', width: 2 } } 
+    }];
     chartLayout = {
       title: 'Saved Entries by Domain',
-      xaxis: { automargin: true }
+      titlefont: { size: 24, color: '#333' },
+      xaxis: { automargin: true, title: 'Domains', titlefont: { size: 16, color: '#666' } },
+      yaxis: { title: 'Entry Count', titlefont: { size: 16, color: '#666' } },
+      plot_bgcolor: '#f9f9f9',
+      paper_bgcolor: '#ffffff',
+      font: { family: 'Arial, sans-serif', size: 14, color: '#333' },
     };
   }
 

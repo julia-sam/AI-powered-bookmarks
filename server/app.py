@@ -15,7 +15,7 @@ INDEX_DIR = "faiss_index"
 vector_store = None
 
 if os.path.isdir(INDEX_DIR):
-    vector_store = FAISS.load_local(INDEX_DIR, embeddings_model)
+    vector_store = FAISS.load_local(INDEX_DIR, embeddings_model, allow_dangerous_deserialization=True)
 
 app = Flask(__name__)
 CORS(app)
@@ -78,16 +78,16 @@ def get_entries():
 
 @app.route('/search', methods=['GET'])
 def search_entries():
-    q = request.args.get('q','')
+    q = request.args.get('q', '')
     if not q:
         return jsonify([]), 200
 
-    # 1) run semantic search
-    results = vector_store.similarity_search(q, k=5)
+    # 1) Run semantic search with scores
+    results = vector_store.similarity_search_with_score(q, k=5)
 
-    # 2) lookup full entries in the DB
+    # 2) Lookup full entries in the DB
     out = []
-    for doc in results:
+    for doc, score in results:
         eid = int(doc.metadata['id'])
         e = Entry.query.get(eid)
         out.append({
@@ -95,7 +95,7 @@ def search_entries():
             "content": e.content,
             "page_url": e.page_url,
             "page_title": e.page_title,
-            "score": doc.score  # similarity score
+            "score": float(score)  # Convert score to a standard float
         })
 
     return jsonify(out), 200
