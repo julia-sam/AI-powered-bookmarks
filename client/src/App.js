@@ -5,25 +5,42 @@ import Plot from 'react-plotly.js';
 function App() {
   // ─── State ─────────────────────────────────────────────
   const [entries, setEntries]       = useState([]);   // all saved entries
-  const [results, setResults]       = useState([]);   // search results
+  const [filteredEntries, setFilteredEntries] = useState([]); // entries filtered by category
+  const [categories, setCategories] = useState([]);   // unique categories
+  const [activeCategory, setActiveCategory] = useState('All Entries'); // currently selected category
   const [query, setQuery]           = useState('');   // search text
   const [summaries, setSummaries]   = useState({});   // id → summary text
 
   // ─── Load recent entries on mount ────────────────────
   useEffect(() => {
     axios.get('/entries')
-      .then(res => setEntries(res.data))
+      .then(res => {
+        console.log("Entries with categories:", res.data); 
+        setEntries(res.data);
+        setFilteredEntries(res.data); // Initially show all entries
+        const uniqueCategories = ['All Entries', ...new Set(res.data.map(e => e.category))];
+        setCategories(uniqueCategories);
+      })
       .catch(err => console.error(err));
-  }, []);
+  }, []);  
 
   // ─── Handlers ─────────────────────────────────────────
+  const handleCategoryClick = (category) => {
+    setActiveCategory(category);
+    if (category === 'All Entries') {
+      setFilteredEntries(entries);
+    } else {
+      setFilteredEntries(entries.filter(e => e.category === category));
+    }
+  };
+
   const handleSearch = () => {
     if (!query.trim()) {
-      setResults([]);
+      setFilteredEntries(entries);
       return;
     }
     axios.get('/search', { params: { q: query } })
-      .then(res => setResults(res.data))
+      .then(res => setFilteredEntries(res.data))
       .catch(err => console.error(err));
   };
 
@@ -39,8 +56,8 @@ function App() {
   };
 
   // ─── Decide what to display ───────────────────────────
-  const displayList = results.length > 0 ? results : entries;
-  const isSearchMode = results.length > 0;
+  const displayList = filteredEntries.length > 0 ? filteredEntries : entries;
+  const isSearchMode = filteredEntries.length > 0;
 
   // ─── Prepare chart data ───────────────────────────────
   let chartData;
@@ -100,6 +117,28 @@ function App() {
     <div style={{ margin: '2rem' }}>
       <h1>Embed Anywhere Dashboard</h1>
 
+      {/* ─── Category Buttons ───────────────────────────── */}
+      <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        {categories.map(category => (
+          <button
+            key={category}
+            onClick={() => handleCategoryClick(category)}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '20px',
+              border: 'none',
+              backgroundColor: activeCategory === category ? '#007BFF' : '#E0E0E0',
+              color: activeCategory === category ? '#FFF' : '#333',
+              cursor: 'pointer',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              transition: 'background-color 0.3s, color 0.3s',
+            }}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+
       {/* ─── Search Bar ──────────────────────────────── */}
       <div style={{ marginBottom: '1rem' }}>
         <input
@@ -112,26 +151,15 @@ function App() {
         <button onClick={handleSearch} style={{ marginLeft: '0.5rem', padding: '0.5rem 1rem' }}>
           Search
         </button>
-        {isSearchMode && (
-          <button
-            onClick={() => { setResults([]); setQuery(''); }}
-            style={{ marginLeft: '0.5rem', padding: '0.5rem 1rem' }}
-          >
-            Clear
-          </button>
-        )}
       </div>
 
-      {/* ─── List of Entries / Results ──────────────── */}
-      <h2>{isSearchMode ? 'Search Results' : 'Recent Entries'}</h2>
+      {/* ─── List of Entries ──────────────── */}
+      <h2>{activeCategory}</h2>
       <ul>
-        {displayList.map(entry => (
+        {filteredEntries.map(entry => (
           <li key={entry.id} style={{ marginBottom: '1rem' }}>
             <strong>{entry.page_title}</strong> – {entry.content} <br/>
             <em>{entry.page_url}</em> – {new Date(entry.timestamp).toLocaleString()}
-            {isSearchMode && typeof entry.score === 'number' && (
-              <span> (score: {entry.score.toFixed(2)})</span>
-            )}
             <div style={{ marginTop: '0.5rem' }}>
               <button
                 onClick={() => handleSummarize(entry.id, entry.content)}

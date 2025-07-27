@@ -8,6 +8,8 @@ from flask_cors import CORS
 from langchain_community.vectorstores import FAISS
 from langchain.schema import Document
 from langchain.embeddings import SentenceTransformerEmbeddings
+from flask_migrate import Migrate
+from transformers import pipeline  
 
 hf_embeddings = SentenceTransformerEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -24,33 +26,46 @@ app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///knowledge.db'
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 class Entry(db.Model):
     id        = db.Column(db.Integer, primary_key=True)
     content   = db.Column(db.Text)
     page_url  = db.Column(db.String(500))
     page_title= db.Column(db.String(500))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime)
+    category  = db.Column(db.String(100), default='Uncategorized')
+
+category_model = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
 @app.route('/save_entry', methods=['POST'])
 def save_entry():
     data = request.get_json()
+    
+    candidate_labels = ["Technology", "Health", "Finance", "Education", "Entertainment", "Politics", "Sports", "Science", "Travel", "Lifestyle"]
+    
+    prediction = category_model(data['content'], candidate_labels=candidate_labels)
+    predicted_category = prediction['labels'][0] 
+    
     entry = Entry(
         content    = data['content'],
         page_url   = data['page_url'],
         page_title = data['page_title'],
-        timestamp  = datetime.fromisoformat(data['timestamp'])
+        timestamp  = datetime.fromisoformat(data['timestamp']),
+        category   = predicted_category  
     )
     db.session.add(entry); db.session.commit()
 
-    doc = Document(page_content=entry.content, metadata={"id": entry.id})
+    entries = Entry.query.all()
+    docs = [
+        Document(page_content=e.content, metadata={"id": e.id})
+        for e in entries
+    ]
     global vector_store
-    if vector_store is None:
-        vector_store = FAISS.from_documents([doc], hf_embeddings)
-    else:
-        vector_store.add_documents([doc])
+    vector_store = FAISS.from_documents(docs, hf_embeddings)
     vector_store.save_local(INDEX_DIR)
-    return jsonify({"status":"success","id":entry.id})
+
+    return jsonify({"status": "success", "id": entry.id})
 
 @app.route('/entries', methods=['GET'])
 def get_entries():
@@ -61,7 +76,8 @@ def get_entries():
             "content":   e.content,
             "page_url":  e.page_url,
             "page_title":e.page_title,
-            "timestamp": e.timestamp.isoformat()
+            "timestamp": e.timestamp.isoformat(),
+            "category":  e.category
         }
         for e in entries
     ]), 200
@@ -79,9 +95,18 @@ def search_entries():
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
-        if not os.path.isdir(INDEX_DIR) and Entry.query.count()>0:
-            docs = [Document(page_content=e.content, metadata={"id":e.id}) for e in Entry.query.all()]
-            vs = FAISS.from_documents(docs, hf_embeddings)
-            vs.save_local(INDEX_DIR)
+        db.create_all()  
+      
+        entries = Entry.query.all()
+        
+        if entries:  
+            docs = [
+                Document(page_content=e.content, metadata={"id": e.id})
+                for e in entries
+            ]
+            vector_store = FAISS.from_documents(docs, hf_embeddings)
+            vector_store.save_local(INDEX_DIR)
+        else:
+            print("No entries found in the database. Vector store not created.")
+    
     app.run(debug=True, port=5000)
