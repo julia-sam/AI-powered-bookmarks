@@ -115,7 +115,7 @@ function App() {
   // ─── Render ────────────────────────────────────────────
   return (
     <div style={{ margin: '2rem' }}>
-      <h1>Embed Anywhere Dashboard</h1>
+      <h1>My Bookmarks Dashboard</h1>
 
       {/* ─── Category Buttons ───────────────────────────── */}
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
