@@ -1,0 +1,7 @@
+venv/
+*.db
+__pycache__/
+*.pt
+*.pkl
+faiss_index/
+bookmarks_dash.png
