@@ -1,8 +1,9 @@
 /venv
 /server/.env
-/server/instance/knowledge.db
+/server/instance/
 /server/faiss_index/
+/server/migrations/
 /server/__pycache__/
 *.pyc
 *.pyo
-
+*DS_Store
