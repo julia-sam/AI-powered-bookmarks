@@ -33,8 +33,9 @@ class Entry(db.Model):
     content   = db.Column(db.Text)
     page_url  = db.Column(db.String(500))
     page_title= db.Column(db.String(500))
-    timestamp = db.Column(db.DateTime, default=datetime)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     category  = db.Column(db.String(100), default='Uncategorized')
+    image_url = db.Column(db.String(500))
 
 category_model = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
@@ -43,18 +44,19 @@ def save_entry():
     data = request.get_json()
     
     candidate_labels = ["Technology", "Health", "Finance", "Education", "Entertainment", "Politics", "Sports", "Science", "Travel", "Lifestyle"]
-    
     prediction = category_model(data['content'], candidate_labels=candidate_labels)
-    predicted_category = prediction['labels'][0] 
+    predicted_category = prediction['labels'][0]
     
     entry = Entry(
         content    = data['content'],
         page_url   = data['page_url'],
         page_title = data['page_title'],
         timestamp  = datetime.fromisoformat(data['timestamp']),
-        category   = predicted_category  
+        category   = predicted_category,
+        image_url  = data.get('image_url') 
     )
-    db.session.add(entry); db.session.commit()
+    db.session.add(entry)
+    db.session.commit()
 
     entries = Entry.query.all()
     docs = [
@@ -72,12 +74,13 @@ def get_entries():
     entries = Entry.query.all()
     return jsonify([
         {
-            "id":        e.id,
-            "content":   e.content,
-            "page_url":  e.page_url,
-            "page_title":e.page_title,
-            "timestamp": e.timestamp.isoformat(),
-            "category":  e.category
+            "id":         e.id,
+            "content":    e.content,
+            "page_url":   e.page_url,
+            "page_title": e.page_title,
+            "timestamp":  e.timestamp.isoformat(),
+            "category":   e.category,
+            "image_url":  e.image_url  
         }
         for e in entries
     ]), 200

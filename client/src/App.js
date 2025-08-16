@@ -69,6 +69,9 @@ function App() {
     font: { family: 'Helvetica, sans-serif', size: 14, color: '#333' },
   };
 
+  // Debugging: Log the filtered entries
+  console.log('Entry data:', filteredEntries);
+
   // ─── Render ────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', margin: '2rem', fontFamily: 'Helvetica, sans-serif' }}>
@@ -146,10 +149,28 @@ function App() {
               <div style={{ flex: 1, fontWeight: 'bold' }}>
                 {entry.page_title}
               </div>
-              {/* Column 2: Content & Source */}
-              <div style={{ flex: 2, padding: '0 1rem' }}>
-                <div>{entry.content}</div>
-                <div style={{ fontSize: '0.9rem', color: '#555' }}>{entry.page_url}</div>
+              {/* Column 2: Content, Source & Image */}
+              <div style={{ flex: 2, padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {entry.content.match(/\.(gif|jpe?g|png|webp)$/i) ? (
+                  <>
+                    <img
+                      src={entry.content}
+                      alt="Entry thumbnail"
+                      style={{ width: '250px', height: 'auto', objectFit: 'cover', borderRadius: '5px' }}
+                      onError={(e) => console.error('Image failed to load:', e)}
+                    />
+                    <div style={{ fontSize: '0.9rem', color: '#555' }}>
+                      {entry.page_url}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>{entry.content}</div>
+                    <div style={{ fontSize: '0.9rem', color: '#555' }}>
+                      {entry.page_url}
+                    </div>
+                  </>
+                )}
               </div>
               {/* Column 3: Date/Time */}
               <div style={{ flex: 1, textAlign: 'right', fontSize: '0.9rem', color: '#555' }}>

@@ -9,3 +9,4 @@ class Entry(db.Model):
     timestamp  = db.Column(db.DateTime)
     embedding  = db.Column(JSON)
     category  = db.Column(db.String(100), default='Uncategorized')
+    image_url = db.Column(db.String(500))
