@@ -1,5 +1,4 @@
 /venv
-/server/.env
 /server/instance/
 /server/faiss_index/
 /server/migrations/
@@ -7,3 +6,6 @@
 *.pyc
 *.pyo
 *DS_Store
+*.db
+*.pkl
+*.faiss

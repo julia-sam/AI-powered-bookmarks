@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import Plot from 'react-plotly.js';
+import bookmarkIcon from './bookmark.png'; 
 
 function App() {
   // ─── State ─────────────────────────────────────────────
@@ -59,131 +59,106 @@ function App() {
   const displayList = filteredEntries.length > 0 ? filteredEntries : entries;
   const isSearchMode = filteredEntries.length > 0;
 
-  // ─── Prepare chart data ───────────────────────────────
-  let chartData;
-  let chartLayout;
-
-  if (isSearchMode) {
-    // Bar chart of similarity scores for search results
-    const titles = displayList.map(e => e.page_title);
-    const scores = displayList.map(e => e.score ?? 0);
-    chartData = [{ 
-      x: titles, 
-      y: scores, 
-      type: 'bar', 
-      marker: { color: 'rgba(54, 162, 235, 0.7)', line: { color: 'rgba(54, 162, 235, 1)', width: 2 } } 
-    }];
-    chartLayout = {
-      title: 'Search Result Similarity Scores',
-      titlefont: { size: 24, color: '#333' },
-      xaxis: { automargin: true, title: 'Page Titles', titlefont: { size: 16, color: '#666' } },
-      yaxis: { title: 'Similarity Score', titlefont: { size: 16, color: '#666' } },
-      plot_bgcolor: '#f9f9f9',
-      paper_bgcolor: '#ffffff',
-      font: { family: 'Arial, sans-serif', size: 14, color: '#333' },
-    };
-  } else {
-    // Domain frequency for recent entries
-    const domainCount = displayList.reduce((acc, entry) => {
-      try {
-        const hostname = new URL(entry.page_url).hostname;
-        acc[hostname] = (acc[hostname] || 0) + 1;
-      } catch {
-        // skip bad URLs
-      }
-      return acc;
-    }, {});
-    const domains = Object.keys(domainCount);
-    const counts  = Object.values(domainCount);
-    chartData = [{ 
-      x: domains, 
-      y: counts, 
-      type: 'bar', 
-      marker: { color: 'rgba(75, 192, 192, 0.7)', line: { color: 'rgba(75, 192, 192, 1)', width: 2 } } 
-    }];
-    chartLayout = {
-      title: 'Saved Entries by Domain',
-      titlefont: { size: 24, color: '#333' },
-      xaxis: { automargin: true, title: 'Domains', titlefont: { size: 16, color: '#666' } },
-      yaxis: { title: 'Entry Count', titlefont: { size: 16, color: '#666' } },
-      plot_bgcolor: '#f9f9f9',
-      paper_bgcolor: '#ffffff',
-      font: { family: 'Arial, sans-serif', size: 14, color: '#333' },
-    };
-  }
+  // Common layout settings
+  const commonLayout = {
+    width: 700,      // Fixed width
+    height: 400,     // Fixed height
+    margin: { l: 60, r: 30, t: 70, b: 100 },
+    paper_bgcolor: '#ffffff',
+    plot_bgcolor: '#f2f2f2',
+    font: { family: 'Helvetica, sans-serif', size: 14, color: '#333' },
+  };
 
   // ─── Render ────────────────────────────────────────────
   return (
-    <div style={{ margin: '2rem' }}>
-      <h1>My Bookmarks Dashboard</h1>
-
-      {/* ─── Category Buttons ───────────────────────────── */}
-      <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-        {categories.map(category => (
-          <button
-            key={category}
-            onClick={() => handleCategoryClick(category)}
+    <div style={{ display: 'flex', margin: '2rem', fontFamily: 'Helvetica, sans-serif' }}>
+      {/* ─── Left Sidebar ───────────────────────────── */}
+      <div style={{ width: '250px', padding: '1rem', borderRight: '1px solid #ccc' }}>
+        {/* Title with Bookmark Icon */}
+        <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
+          <img
+            src={bookmarkIcon}
+            alt="Bookmark Icon"
+            style={{ width: '30px', height: '30px', marginRight: '0.5rem' }}
+          />
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>My Bookmarks</h2>
+        </div>
+        <hr style={{ marginBottom: '1rem', border: 'none', borderTop: '1px solid lightgray' }} />
+        {/* Search Bar */}
+        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+          <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}></span>
+          <input
+            type="text"
+            placeholder="🔍 Search bookmarks..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
             style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '20px',
-              border: 'none',
-              backgroundColor: activeCategory === category ? '#007BFF' : '#E0E0E0',
-              color: activeCategory === category ? '#FFF' : '#333',
-              cursor: 'pointer',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-              transition: 'background-color 0.3s, color 0.3s',
+              flex: 1,
+              padding: '0.5rem',
+              borderRadius: '5px',
+              border: '1px solid #ccc'
             }}
-          >
-            {category}
-          </button>
-        ))}
+          />
+        </div>
+        {/* Categories */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {categories.map(category => (
+            <button
+              key={category}
+              onClick={() => handleCategoryClick(category)}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                border: 'none',
+                background: activeCategory === category
+                  ? 'linear-gradient(45deg, #d8b5ff, #b3e5fc)'
+                  : '#E0E0E0',
+                color: activeCategory === category ? 'black' : '#333',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                transition: 'background 0.3s, color 0.3s'
+              }}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* ─── Search Bar ──────────────────────────────── */}
-      <div style={{ marginBottom: '1rem' }}>
-        <input
-          type="text"
-          placeholder="Search highlights..."
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          style={{ padding: '0.5rem', width: '300px' }}
-        />
-        <button onClick={handleSearch} style={{ marginLeft: '0.5rem', padding: '0.5rem 1rem' }}>
-          Search
-        </button>
-      </div>
-
-      {/* ─── List of Entries ──────────────── */}
-      <h2>{activeCategory}</h2>
-      <ul>
-        {filteredEntries.map(entry => (
-          <li key={entry.id} style={{ marginBottom: '1rem' }}>
-            <strong>{entry.page_title}</strong> – {entry.content} <br/>
-            <em>{entry.page_url}</em> – {new Date(entry.timestamp).toLocaleString()}
-            <div style={{ marginTop: '0.5rem' }}>
-              <button
-                onClick={() => handleSummarize(entry.id, entry.content)}
-                style={{ fontSize: '0.9rem', padding: '0.3rem 0.6rem' }}
-              >
-                {summaries[entry.id] ? 'Summarized' : 'Summarize'}
-              </button>
-              {summaries[entry.id] && (
-                <p style={{ marginTop: '0.3rem', fontStyle: 'italic' }}>
-                  {summaries[entry.id]}
-                </p>
-              )}
+      {/* ─── Main Content Area ───────────────────────── */}
+      <div style={{ flex: 1, padding: '1rem' }}>
+        <h2>{activeCategory}</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {filteredEntries.map(entry => (
+            <div
+              key={entry.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '1rem',
+                border: '1px solid #ccc',
+                borderRadius: '5px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+            >
+              {/* Column 1: Title */}
+              <div style={{ flex: 1, fontWeight: 'bold' }}>
+                {entry.page_title}
+              </div>
+              {/* Column 2: Content & Source */}
+              <div style={{ flex: 2, padding: '0 1rem' }}>
+                <div>{entry.content}</div>
+                <div style={{ fontSize: '0.9rem', color: '#555' }}>{entry.page_url}</div>
+              </div>
+              {/* Column 3: Date/Time */}
+              <div style={{ flex: 1, textAlign: 'right', fontSize: '0.9rem', color: '#555' }}>
+                {new Date(entry.timestamp).toLocaleString()}
+              </div>
             </div>
-          </li>
-        ))}
-      </ul>
-
-      {/* ─── Plotly Chart ────────────────────────────── */}
-      <h2>{chartLayout.title}</h2>
-      <Plot
-        data={chartData}
-        layout={chartLayout}
-        style={{ width: '100%', maxWidth: '700px' }}
-      />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
