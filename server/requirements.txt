@@ -1,3 +1,4 @@
+torch==1.11.0+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
 flask
 flask_sqlalchemy
 flask_cors
@@ -7,3 +8,4 @@ langchain-community==0.2.0
 langchain-huggingface==0.0.3
 faiss-cpu
 gunicorn
+
