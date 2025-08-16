@@ -16,7 +16,7 @@ This project is a web-based dashboard for managing and visualizing saved bookmar
 2. Select Save to Knowledge Base from the context menu.
 3. The selected content will be sent to the backend and saved in the knowledge base.
 
-<img src="https://github.com/julia-sam/embed-anywhere-chrome-extension/blob/master/bookmarks_dash.png?raw=true" width="600" height="600">
+<img src="https://github.com/julia-sam/AI-powered-bookmarks/blob/master/bookmarking-system.png?raw=true" width="600" height="600">
 
 ### Technologies Used
 - Backend: Flask, SQLAlchemy, FAISS, Hugging Face Transformers
