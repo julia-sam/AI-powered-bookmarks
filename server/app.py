@@ -89,12 +89,31 @@ def get_entries():
 def search_entries():
     q = request.args.get('q','')
     if not q: return jsonify([]), 200
-    results = vector_store.similarity_search_with_score(q, k=5)
+    results = vector_store.similarity_search_with_score(q, k=2)
     out = []
     for doc, score in results:
         e = Entry.query.get(int(doc.metadata['id']))
         out.append({**{"id":e.id, "content":e.content, "page_url":e.page_url, "page_title":e.page_title}, "score":float(score)})
     return jsonify(out), 200
+
+@app.route('/entries/<int:entry_id>', methods=['DELETE'])
+def delete_entry(entry_id):
+    entry = Entry.query.get_or_404(entry_id)
+    db.session.delete(entry)
+    db.session.commit()
+
+    # Update vector store after deletion
+    entries = Entry.query.all()
+    if entries:
+        docs = [
+            Document(page_content=e.content, metadata={"id": e.id})
+            for e in entries
+        ]
+        global vector_store
+        vector_store = FAISS.from_documents(docs, hf_embeddings)
+        vector_store.save_local(INDEX_DIR)
+
+    return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
     with app.app_context():

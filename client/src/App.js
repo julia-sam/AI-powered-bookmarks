@@ -55,6 +55,24 @@ function App() {
       .catch(err => console.error(err));
   };
 
+  const handleDelete = async (entryId) => {
+    if (window.confirm('Are you sure you want to delete this entry?')) {
+      try {
+        const response = await axios.delete(`/entries/${entryId}`);
+        
+        if (response.status === 200) {
+          // Remove the entry from the local state
+          setEntries(entries.filter(entry => entry.id !== entryId));
+          if (filteredEntries.length > 0) {
+            setFilteredEntries(filteredEntries.filter(entry => entry.id !== entryId));
+          }
+        }
+      } catch (error) {
+        console.error('Error deleting entry:', error);
+      }
+    }
+  };
+
   // ─── Decide what to display ───────────────────────────
   const displayList = filteredEntries.length > 0 ? filteredEntries : entries;
   const isSearchMode = filteredEntries.length > 0;
@@ -151,7 +169,7 @@ function App() {
               </div>
               {/* Column 2: Content, Source & Image */}
               <div style={{ flex: 2, padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {entry.content.match(/\.(gif|jpe?g|png|webp)$/i) ? (
+                {entry.content.match(/\.(gif|jpe?g|png|webp)(?:\?.*)?$/i) ? (
                   <>
                     <img
                       src={entry.content}
@@ -176,6 +194,24 @@ function App() {
               <div style={{ flex: 1, textAlign: 'right', fontSize: '0.9rem', color: '#555' }}>
                 {new Date(entry.timestamp).toLocaleString()}
               </div>
+              {/* Delete Button */}
+              <button
+                onClick={() => handleDelete(entry.id)}
+                style={{
+                  marginLeft: '1rem',
+                  padding: '0.5rem',
+                  background: '#ff4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  transition: 'background 0.3s'
+                }}
+                onMouseOver={(e) => e.target.style.background = '#ff6666'}
+                onMouseOut={(e) => e.target.style.background = '#ff4444'}
+              >
+                Delete
+              </button>
             </div>
           ))}
         </div>
