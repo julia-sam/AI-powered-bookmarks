@@ -8,7 +8,6 @@ This project is a web-based dashboard for managing and visualizing saved bookmar
 - Automatic Categorization: Entries are categorized using a zero-shot classification model (facebook/bart-large-mnli).
 - Search Functionality: Search entries using semantic similarity.
 - Category Filtering: Filter entries by category using dynamic buttons.
-- Visualization: View saved entries by domain or search similarity scores using interactive charts.
 
 ### Usage
 #### Saving an Entry via Chrome Extension:
@@ -20,6 +19,6 @@ This project is a web-based dashboard for managing and visualizing saved bookmar
 
 ### Technologies Used
 - Backend: Flask, SQLAlchemy, FAISS, Hugging Face Transformers
-- Frontend: React, Axios, Plotly.js
+- Frontend: React, Axios
 - Database: SQLite
 - Chrome Extension: JavaScript, Chrome APIs
