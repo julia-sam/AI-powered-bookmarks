@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import bookmarkIcon from './bookmark.png'; 
+import trashIcon from './trash.png';
 
 function App() {
   // ─── State ─────────────────────────────────────────────
@@ -205,12 +206,28 @@ function App() {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  transition: 'background 0.3s'
+                  transition: 'background 0.3s',
+                  fontSize: '0.9rem',  // Reduced from 1.2rem
+                  display: 'flex',     
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',      
+                  height: '32px',      
+                  
                 }}
                 onMouseOver={(e) => e.target.style.background = '#ff6666'}
                 onMouseOut={(e) => e.target.style.background = '#ff4444'}
+                title="Delete entry"
               >
-                Delete
+                <img 
+                  src={trashIcon} 
+                  alt="Delete"
+                  style={{ 
+                    width: '16px', 
+                    height: '16px',
+                    
+                  }} 
+                />
               </button>
             </div>
           ))}
