@@ -1,0 +1,6 @@
+.env
+*.pyc
+__pycache__/
+faiss_index/
+node_modules/
+README.md
