@@ -9,3 +9,4 @@
 *.db
 *.pkl
 *.faiss
+/server/.env
